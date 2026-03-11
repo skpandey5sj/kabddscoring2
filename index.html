@@ -452,7 +452,7 @@ async function syncToVmix() {
       { func: 'SetText', name: 'CLOCK.Text', value: formatTime(state.gameTime) },
       
       // RAID TIMER.Text (for half display)
-      { func: 'SetText', name: 'RAID TIMER.Text', value: state.currentHalf === 1 ? '1st HALF' : '2nd HALF' }
+      { func: 'SetText', name: 'RAID TIMER.Text', value: state.raidTime.toString() }
     ];
     
     // Send all updates
