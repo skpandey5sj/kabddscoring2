@@ -1,1 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kabaddi Pro Control - Complete Graphics Controller</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-dark: #0a0c14;
+      --card-bg: rgba(20, 25, 40, 0.85);
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-yellow: #f59e0b;
+    }
+    
+    body {
+      background: linear-gradient(145deg, #0f1422 0%, #1a1f32 100%);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    
+    .glass-card {
+      background: rgba(20, 28, 45, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1.2rem;
+      box-shadow: 0 25px 40px -15px rgba(0, 0, 0, 0.6);
+    }
+    
+    .score-glow {
+      text-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+    }
+    
+    .timer-display {
+      font-family: 'Courier New', monospace;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+    
+    .btn-control {
+      @apply px-4 py-2.5 rounded-lg font-semibold transition-all duration-150;
+      background: rgba(45, 55, 75, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-control:hover {
+      background: rgba(60, 70, 95, 0.9);
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+    }
+    
+    .btn-success {
+      background: linear-gradient(145deg, #059669, #047857);
+    }
+    
+    .btn-warning {
+      background: linear-gradient(145deg, #d97706, #b45309);
+    }
+    
+    .btn-danger {
+      background: linear-gradient(145deg, #dc2626, #b91c1c);
+    }
+    
+    .graphics-selector {
+      background: rgba(30, 40, 60, 0.9);
+      border-radius: 2rem;
+      padding: 0.3rem;
+    }
+    
+    .graphics-option {
+      @apply px-6 py-2.5 rounded-full font-medium transition-all;
+    }
+    
+    .graphics-option.active {
+      background: #3b82f6;
+      box-shadow: 0 0 20px #3b82f6;
+    }
+    
+    .vmix-status {
+      @apply flex items-center gap-2 px-4 py-2 rounded-full text-sm;
+    }
+    
+    .vmix-connected {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+    }
+    
+    .vmix-disconnected {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+    }
+    
+    .editable-field {
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .editable-field:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body class="text-gray-100 p-4 min-h-screen">
 
+<!-- vMix Connection Modal -->
+<div id="vmixModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+  <div class="glass-card p-8 w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+      <i class="fa-solid fa-plug text-blue-400"></i>
+      vMix Connection
+    </h2>
+    
+    <form id="vmixForm">
+      <div class="space-y-5">
+        <div>
+          <label class="block mb-2 text-sm font-medium opacity-80">IP Address</label>
+          <input id="vmixIP" type="text" value="127.0.0.1" 
+                 class="w-full p-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        
+        <div>
+          <label class="block mb-2 text-sm font-medium opacity-80">Port</label>
+          <input id="vmixPort" type="number" value="8088" 
+                 class="w-full p-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        
+        <div>
+          <label class="block mb-2 text-sm font-medium opacity-80">Graphics Input (Number or GUID)</label>
+          <input id="vmixInput" type="text" value="1" 
+                 class="w-full p-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+      </div>
+      
+      <div class="flex gap-4 justify-end mt-8">
+        <button type="button" id="vmixClose" 
+                class="px-6 py-3 bg-slate-700 rounded-xl hover:bg-slate-600 transition font-medium">
+          Cancel
+        </button>
+        <button type="submit" 
+                class="px-6 py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition font-medium">
+          <i class="fa-solid fa-link mr-2"></i>Connect
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Main Header -->
+<div class="max-w-7xl mx-auto">
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+      <h1 class="text-3xl font-black bg-gradient-to-r from-blue-400 to-yellow-400 bg-clip-text text-transparent">
+        KABADDI PRO <span class="text-sm text-gray-400 font-normal ml-2">Graphics Controller</span>
+      </h1>
+    </div>
+    
+    <div class="flex gap-3">
+      <div id="vmixStatus" class="vmix-status vmix-disconnected">
+        <i class="fa-solid fa-circle"></i>
+        <span>vMix Disconnected</span>
+      </div>
+      
+      <button id="vmixBtn" class="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded-full font-medium transition flex items-center gap-2">
+        <i class="fa-solid fa-gear"></i>
+        vMix Settings
+      </button>
+      
+      <button id="swapTeamsBtn" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-full font-medium transition">
+        <i class="fa-solid fa-arrow-right-arrow-left mr-2"></i>Swap
+      </button>
+      
+      <button id="resetBtn" class="bg-rose-700 hover:bg-rose-600 px-5 py-2 rounded-full font-medium transition">
+        <i class="fa-solid fa-rotate-left mr-2"></i>Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    
+    <!-- LEFT: Main Scorebug Panel -->
+    <div class="xl:col-span-12 space-y-6">
+      <!-- Live Preview -->
+      <div class="glass-card p-6">
+        <h2 class="text-sm uppercase tracking-wider opacity-60 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-eye"></i> LIVE PREVIEW
+        </h2>
+        
+        <!-- Scorebug Preview -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 border border-white/10">
+          <div class="flex items-center justify-between">
+            <!-- Home Team -->
+            <div class="text-center w-1/3">
+              <div id="previewHomeName" class="text-2xl font-bold text-yellow-400 mb-1 truncate">PATNA PIRATES</div>
+              <div id="previewHomeScore" class="text-7xl font-black text-yellow-300 score-glow">00</div>
+            </div>
+            
+            <!-- Center Info -->
+            <div class="text-center">
+              <div id="previewHalf" class="text-3xl font-bold mb-2">1ST HALF</div>
+              <div class="flex items-center gap-6 text-xl">
+                <span id="previewHomeArrow" class="text-yellow-400 text-3xl">←</span>
+                <span id="previewRaidTeam" class="font-semibold">RAID: HOME</span>
+                <span id="previewAwayArrow" class="text-orange-400 text-3xl"></span>
+              </div>
+              <div class="flex justify-center gap-6 mt-4 text-2xl font-mono">
+                <span id="previewGameTimer" class="text-emerald-400">20:00</span>
+                <span class="opacity-40">|</span>
+                <span id="previewRaidTimer" class="text-amber-400">30</span>
+              </div>
+            </div>
+            
+            <!-- Away Team -->
+            <div class="text-center w-1/3">
+              <div id="previewAwayName" class="text-2xl font-bold text-orange-400 mb-1 truncate">DELHI DAREDEVILS</div>
+              <div id="previewAwayScore" class="text-7xl font-black text-orange-300 score-glow">00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Controls -->
+      <div class="glass-card p-6">
+        <h2 class="text-sm uppercase tracking-wider opacity-60 mb-4">MAIN CONTROLS</h2>
+        
+        <!-- Timer Controls -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+          <!-- Game Clock -->
+          <div class="bg-slate-800/50 rounded-xl p-4">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-semibold">GAME CLOCK</span>
+              <span id="gameTimerDisplay" class="text-3xl font-mono font-bold text-emerald-400 editable-field">20:00</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button data-game-adjust="60" class="btn-control">+60s</button>
+              <button data-game-adjust="-60" class="btn-control">-60s</button>
+              <button data-game-adjust="10" class="btn-control">+10s</button>
+              <button data-game-adjust="-10" class="btn-control">-10s</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3">
+              <button id="gameStart" class="btn-success py-3">START</button>
+              <button id="gamePause" class="btn-warning py-3">PAUSE</button>
+              <button id="gameReset" class="btn-danger py-3">RESET</button>
+            </div>
+          </div>
+          
+          <!-- Raid Timer -->
+          <div class="bg-slate-800/50 rounded-xl p-4">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-semibold">RAID CLOCK</span>
+              <span id="raidTimerDisplay" class="text-3xl font-mono font-bold text-amber-400">30</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="raidStart" class="btn-success py-3">RAID IN</button>
+              <button id="raidStop" class="btn-danger py-3">RAID OUT</button>
+            </div>
+            <div class="mt-3">
+              <button id="raidReset" class="btn-control w-full py-3">RESET 30s</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Half Selector -->
+        <div class="flex items-center gap-4 mb-6">
+          <span class="font-semibold">HALF:</span>
+          <select id="halfSelect" class="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="1">1st Half</option>
+            <option value="2">2nd Half</option>
+          </select>
+        </div>
+        
+        <!-- Team Names & Scores -->
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Home Team -->
+          <div class="border-t-4 border-yellow-500 pt-4">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <span class="text-xs opacity-60">TEAM 1</span>
+                <div id="homeNameCtrl" class="text-2xl font-bold text-yellow-400 editable-field">PATNA PIRATES</div>
+              </div>
+              <div id="homeScoreCtrl" class="text-5xl font-black text-yellow-300 editable-field">00</div>
+            </div>
+            
+            <!-- Score Buttons -->
+            <div class="grid grid-cols-3 gap-2 mb-3">
+              <button data-home="1" class="btn-success py-3 text-lg">+1</button>
+              <button data-home="2" class="btn-success py-3 text-lg">+2</button>
+              <button data-home="4" class="btn-success py-3 text-lg">+4</button>
+              <button data-home="-1" class="btn-danger py-3 text-lg">-1</button>
+              <button data-home="-2" class="btn-danger py-3 text-lg">-2</button>
+              <button data-home="-4" class="btn-danger py-3 text-lg">-4</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <button id="homeAllOut" class="bg-purple-700 hover:bg-purple-600 py-2 rounded-lg">All Out +2</button>
+              <button id="homeBonus" class="bg-blue-700 hover:bg-blue-600 py-2 rounded-lg">Bonus +1</button>
+            </div>
+          </div>
+          
+          <!-- Away Team -->
+          <div class="border-t-4 border-orange-500 pt-4">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <span class="text-xs opacity-60">TEAM 2</span>
+                <div id="awayNameCtrl" class="text-2xl font-bold text-orange-400 editable-field">DELHI DAREDEVILS</div>
+              </div>
+              <div id="awayScoreCtrl" class="text-5xl font-black text-orange-300 editable-field">00</div>
+            </div>
+            
+            <!-- Score Buttons -->
+            <div class="grid grid-cols-3 gap-2 mb-3">
+              <button data-away="1" class="btn-success py-3 text-lg">+1</button>
+              <button data-away="2" class="btn-success py-3 text-lg">+2</button>
+              <button data-away="4" class="btn-success py-3 text-lg">+4</button>
+              <button data-away="-1" class="btn-danger py-3 text-lg">-1</button>
+              <button data-away="-2" class="btn-danger py-3 text-lg">-2</button>
+              <button data-away="-4" class="btn-danger py-3 text-lg">-4</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <button id="awayAllOut" class="bg-purple-700 hover:bg-purple-600 py-2 rounded-lg">All Out +2</button>
+              <button id="awayBonus" class="bg-blue-700 hover:bg-blue-600 py-2 rounded-lg">Bonus +1</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Raid Team Selector -->
+        <div class="mt-6 pt-4 border-t border-white/10">
+          <span class="font-semibold block mb-3">CURRENT RAIDING TEAM:</span>
+          <div class="flex gap-4">
+            <button id="setHomeRaid" class="flex-1 py-4 bg-yellow-600/30 hover:bg-yellow-600/50 border-2 border-yellow-500 rounded-xl font-bold text-xl">← HOME</button>
+            <button id="setNoneRaid" class="py-4 px-8 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold">NONE</button>
+            <button id="setAwayRaid" class="flex-1 py-4 bg-orange-600/30 hover:bg-orange-600/50 border-2 border-orange-500 rounded-xl font-bold text-xl">AWAY →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// KABADDI CONTROLLER WITH vMIX INTEGRATION
+// ============================================
+
+const STORAGE_KEY = 'kabaddi-pro-working-2026';
+
+// Default State
+let state = {
+  // Teams
+  homeName: 'PATNA PIRATES',
+  awayName: 'DELHI DAREDEVILS',
+  
+  // Scores (two halves)
+  halves: [
+    { home: 0, away: 0 },  // Half 1
+    { home: 0, away: 0 }   // Half 2
+  ],
+  
+  // Current half (1 or 2)
+  currentHalf: 1,
+  
+  // Timers
+  gameTime: 1200,  // 20:00 in seconds
+  raidTime: 30,
+  gameRunning: false,
+  raidRunning: false,
+  
+  // Raiding team: 'home', 'away', or 'none'
+  raidingTeam: 'none',
+  
+  // vMix settings
+  vmix: {
+    connected: false,
+    ip: '127.0.0.1',
+    port: 8088,
+    input: '1'
+  }
+};
+
+// Timer variables
+let gameInterval = null;
+let raidInterval = null;
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadFromStorage() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
+      if (parsed.halves) state.halves = parsed.halves;
+    } catch (e) {
+      console.error('Failed to load saved state', e);
+    }
+  }
+}
+
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+function getCurrentHalfScores() {
+  return state.halves[state.currentHalf - 1];
+}
+
+function getTotalHomeScore() {
+  return state.halves[0].home + state.halves[1].home;
+}
+
+function getTotalAwayScore() {
+  return state.halves[0].away + state.halves[1].away;
+}
+
+// ============================================
+// vMIX SYNC FUNCTIONS
+// ============================================
+
+async function syncToVmix() {
+  if (!state.vmix.connected) return;
+  
+  const baseUrl = `http://${state.vmix.ip}:${state.vmix.port}/api`;
+  const input = `Input=${encodeURIComponent(state.vmix.input)}`;
+  
+  try {
+    // Sync main scorebug data
+    const updates = [
+      // Team Names
+      { func: 'SetText', name: 'Team 1 Name.Text', value: state.homeName },
+      { func: 'SetText', name: 'Team 2 Name.Text', value: state.awayName },
+      
+      // Scores
+      { func: 'SetText', name: 'TEAM 1 SCORE.Text', value: getTotalHomeScore().toString().padStart(2, '0') },
+      { func: 'SetText', name: 'TEAM 2 SCORE.Text', value: getTotalAwayScore().toString().padStart(2, '0') },
+      
+      // Clock
+      { func: 'SetText', name: 'CLOCK.Text', value: formatTime(state.gameTime) },
+      
+      // RAID TIMER.Text (for half display)
+      { func: 'SetText', name: 'RAID TIMER.Text', value: state.currentHalf === 1 ? '1st HALF' : '2nd HALF' }
+    ];
+    
+    // Send all updates
+    for (const update of updates) {
+      const url = `${baseUrl}/?Function=${update.func}&${input}&SelectedName=${encodeURIComponent(update.name)}&Value=${encodeURIComponent(update.value)}`;
+      await fetch(url, { mode: 'no-cors' });
+    }
+    
+    console.log('vMix sync completed');
+  } catch (error) {
+    console.error('vMix sync failed:', error);
+  }
+}
+
+// ============================================
+// UI UPDATE FUNCTION
+// ============================================
+
+function updateUI() {
+  // Preview updates
+  document.getElementById('previewHomeName').textContent = state.homeName;
+  document.getElementById('previewAwayName').textContent = state.awayName;
+  document.getElementById('previewHomeScore').textContent = getTotalHomeScore().toString().padStart(2, '0');
+  document.getElementById('previewAwayScore').textContent = getTotalAwayScore().toString().padStart(2, '0');
+  document.getElementById('previewHalf').textContent = state.currentHalf === 1 ? '1ST HALF' : '2ND HALF';
+  document.getElementById('previewGameTimer').textContent = formatTime(state.gameTime);
+  document.getElementById('previewRaidTimer').textContent = state.raidTime;
+  
+  // Raid team indicators
+  const raidText = state.raidingTeam === 'home' ? 'RAID: HOME' : 
+                   state.raidingTeam === 'away' ? 'RAID: AWAY' : 'NO RAID';
+  document.getElementById('previewRaidTeam').textContent = raidText;
+  document.getElementById('previewHomeArrow').textContent = state.raidingTeam === 'home' ? '←' : '';
+  document.getElementById('previewAwayArrow').textContent = state.raidingTeam === 'away' ? '→' : '';
+  
+  // Control panel updates
+  document.getElementById('homeNameCtrl').textContent = state.homeName;
+  document.getElementById('awayNameCtrl').textContent = state.awayName;
+  document.getElementById('homeScoreCtrl').textContent = getTotalHomeScore().toString().padStart(2, '0');
+  document.getElementById('awayScoreCtrl').textContent = getTotalAwayScore().toString().padStart(2, '0');
+  document.getElementById('gameTimerDisplay').textContent = formatTime(state.gameTime);
+  document.getElementById('raidTimerDisplay').textContent = state.raidTime;
+  
+  // Half selector
+  document.getElementById('halfSelect').value = state.currentHalf;
+  
+  // vMix status indicator
+  const vmixStatus = document.getElementById('vmixStatus');
+  if (state.vmix.connected) {
+    vmixStatus.className = 'vmix-status vmix-connected';
+    vmixStatus.innerHTML = '<i class="fa-solid fa-circle text-emerald-400"></i><span>vMix Connected</span>';
+  } else {
+    vmixStatus.className = 'vmix-status vmix-disconnected';
+    vmixStatus.innerHTML = '<i class="fa-solid fa-circle text-red-400"></i><span>vMix Disconnected</span>';
+  }
+  
+  // Sync to vMix if connected
+  if (state.vmix.connected) {
+    syncToVmix();
+  }
+  
+  saveToStorage();
+}
+
+// ============================================
+// TIMER FUNCTIONS
+// ============================================
+
+function startGameTimer() {
+  if (state.gameRunning) return;
+  state.gameRunning = true;
+  gameInterval = setInterval(() => {
+    if (state.gameTime > 0) {
+      state.gameTime--;
+      updateUI();
+    } else {
+      pauseGameTimer();
+    }
+  }, 1000);
+}
+
+function pauseGameTimer() {
+  state.gameRunning = false;
+  clearInterval(gameInterval);
+  updateUI();
+}
+
+function resetGameTimer() {
+  pauseGameTimer();
+  state.gameTime = 1200;
+  updateUI();
+}
+
+function startRaidTimer() {
+  if (state.raidRunning) clearInterval(raidInterval);
+  state.raidRunning = true;
+  state.raidTime = 30;
+  updateUI();
+  
+  raidInterval = setInterval(() => {
+    if (state.raidTime > 0) {
+      state.raidTime--;
+      updateUI();
+    } else {
+      stopRaidTimer();
+    }
+  }, 1000);
+}
+
+function stopRaidTimer() {
+  state.raidRunning = false;
+  clearInterval(raidInterval);
+  state.raidTime = 30;
+  updateUI();
+}
+
+// ============================================
+// EDITABLE FIELDS
+// ============================================
+
+function makeEditable(element, getter, setter, isTimer = false) {
+  element.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    
+    const currentValue = getter();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentValue;
+    input.className = 'bg-slate-700 text-white px-2 py-1 rounded w-full text-center';
+    
+    const parent = element.parentNode;
+    element.style.display = 'none';
+    parent.insertBefore(input, element.nextSibling);
+    input.focus();
+    
+    const save = () => {
+      let newValue = input.value.trim();
+      if (isTimer && newValue.includes(':')) {
+        const parts = newValue.split(':');
+        const minutes = parseInt(parts[0]) || 0;
+        const seconds = parseInt(parts[1]) || 0;
+        newValue = minutes * 60 + seconds;
+        setter(newValue);
+      } else if (isTimer && !isNaN(parseInt(newValue))) {
+        setter(parseInt(newValue));
+      } else if (!isTimer && !isNaN(parseInt(newValue))) {
+        setter(parseInt(newValue));
+      } else if (!isTimer) {
+        setter(newValue);
+      }
+      
+      input.remove();
+      element.style.display = '';
+      updateUI();
+    };
+    
+    input.addEventListener('blur', save);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') save();
+    });
+  });
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromStorage();
+  
+  // Make fields editable
+  makeEditable(document.getElementById('homeNameCtrl'), () => state.homeName, (v) => { state.homeName = v.toUpperCase(); });
+  makeEditable(document.getElementById('awayNameCtrl'), () => state.awayName, (v) => { state.awayName = v.toUpperCase(); });
+  makeEditable(document.getElementById('homeScoreCtrl'), () => getTotalHomeScore().toString(), (v) => {
+    const diff = parseInt(v) - getTotalHomeScore();
+    getCurrentHalfScores().home += diff;
+  });
+  makeEditable(document.getElementById('awayScoreCtrl'), () => getTotalAwayScore().toString(), (v) => {
+    const diff = parseInt(v) - getTotalAwayScore();
+    getCurrentHalfScores().away += diff;
+  });
+  makeEditable(document.getElementById('gameTimerDisplay'), () => formatTime(state.gameTime), (v) => {
+    if (typeof v === 'number') state.gameTime = v;
+  }, true);
+  
+  // Half selector
+  document.getElementById('halfSelect').addEventListener('change', (e) => {
+    state.currentHalf = parseInt(e.target.value);
+    updateUI();
+  });
+  
+  // Game timer controls
+  document.getElementById('gameStart').addEventListener('click', startGameTimer);
+  document.getElementById('gamePause').addEventListener('click', pauseGameTimer);
+  document.getElementById('gameReset').addEventListener('click', resetGameTimer);
+  
+  document.querySelectorAll('[data-game-adjust]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const adjust = parseInt(btn.dataset.gameAdjust);
+      state.gameTime = Math.max(0, Math.min(1500, state.gameTime + adjust));
+      updateUI();
+    });
+  });
+  
+  // Raid timer controls
+  document.getElementById('raidStart').addEventListener('click', startRaidTimer);
+  document.getElementById('raidStop').addEventListener('click', stopRaidTimer);
+  document.getElementById('raidReset').addEventListener('click', () => {
+    stopRaidTimer();
+    state.raidTime = 30;
+    updateUI();
+  });
+  
+  // Score buttons
+  document.querySelectorAll('[data-home]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseInt(btn.dataset.home);
+      getCurrentHalfScores().home = Math.max(0, getCurrentHalfScores().home + val);
+      updateUI();
+    });
+  });
+  
+  document.querySelectorAll('[data-away]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseInt(btn.dataset.away);
+      getCurrentHalfScores().away = Math.max(0, getCurrentHalfScores().away + val);
+      updateUI();
+    });
+  });
+  
+  // All Out & Bonus
+  document.getElementById('homeAllOut').addEventListener('click', () => {
+    getCurrentHalfScores().home += 2;
+    updateUI();
+  });
+  
+  document.getElementById('awayAllOut').addEventListener('click', () => {
+    getCurrentHalfScores().away += 2;
+    updateUI();
+  });
+  
+  document.getElementById('homeBonus').addEventListener('click', () => {
+    getCurrentHalfScores().home += 1;
+    updateUI();
+  });
+  
+  document.getElementById('awayBonus').addEventListener('click', () => {
+    getCurrentHalfScores().away += 1;
+    updateUI();
+  });
+  
+  // Raid team selectors
+  document.getElementById('setHomeRaid').addEventListener('click', () => {
+    state.raidingTeam = 'home';
+    updateUI();
+  });
+  
+  document.getElementById('setAwayRaid').addEventListener('click', () => {
+    state.raidingTeam = 'away';
+    updateUI();
+  });
+  
+  document.getElementById('setNoneRaid').addEventListener('click', () => {
+    state.raidingTeam = 'none';
+    updateUI();
+  });
+  
+  // Swap teams
+  document.getElementById('swapTeamsBtn').addEventListener('click', () => {
+    // Swap names
+    [state.homeName, state.awayName] = [state.awayName, state.homeName];
+    
+    // Swap scores for both halves
+    state.halves.forEach(half => {
+      [half.home, half.away] = [half.away, half.home];
+    });
+    
+    // Swap raiding team
+    if (state.raidingTeam === 'home') state.raidingTeam = 'away';
+    else if (state.raidingTeam === 'away') state.raidingTeam = 'home';
+    
+    updateUI();
+  });
+  
+  // Reset all
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (confirm('Reset everything to default?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  });
+  
+  // vMix modal
+  document.getElementById('vmixBtn').addEventListener('click', () => {
+    document.getElementById('vmixModal').classList.remove('hidden');
+  });
+  
+  document.getElementById('vmixClose').addEventListener('click', () => {
+    document.getElementById('vmixModal').classList.add('hidden');
+  });
+  
+  document.getElementById('vmixForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    state.vmix.ip = document.getElementById('vmixIP').value.trim();
+    state.vmix.port = parseInt(document.getElementById('vmixPort').value) || 8088;
+    state.vmix.input = document.getElementById('vmixInput').value.trim();
+    state.vmix.connected = true;
+    
+    document.getElementById('vmixModal').classList.add('hidden');
+    updateUI();
+    
+    // Test connection
+    syncToVmix();
+  });
+  
+  // Initial UI update
+  updateUI();
+  
+  // Auto-start timers if they were running
+  if (state.gameRunning) startGameTimer();
+  if (state.raidRunning) startRaidTimer();
+  
+  // Prevent accidental close
+  window.addEventListener('beforeunload', (e) => {
+    if (state.gameRunning || state.raidRunning) {
+      e.preventDefault();
+      e.returnValue = 'Timers are still running! Are you sure?';
+    }
+  });
+});
+</script>
+
+</body>
+</html>
